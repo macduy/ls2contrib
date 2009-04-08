@@ -1,0 +1,60 @@
+Index: controllers/dashboard_controller.php
+===================================================================
+--- controllers/dashboard_controller.php	(revision 6598)
++++ controllers/dashboard_controller.php	(working copy)
+@@ -48,8 +48,8 @@
+   */
+   function surveylist(){
+     $this->layout='ajax';
+-                  
+-    $surveydata=$this->Survey->getSurveysForAdmin($this->Session->read('user_id'),($this->Session->read('Permissions.aGlobalAdministration._read')==1));
++    $sort=array('id'=>$this->params['url']['sidx'], 'dir'=>$this->params['url']['sord']);
++    $surveydata=$this->Survey->getSurveysForAdmin($this->Session->read('user_id'),($this->Session->read('Permissions.aGlobalAdministration._read')==1), $sort);
+     
+     $count=count($surveydata);
+     if( $count >0 ) {
+Index: models/survey.php
+===================================================================
+--- models/survey.php	(revision 6598)
++++ models/survey.php	(working copy)
+@@ -103,9 +103,14 @@
+     * @param boolean $isSuperAdmin - indicates if user is superadmin, if yes all surveys are presented
+     */
+     
+-	function GetSurveysForAdmin($user_id, $isSuperAdmin)
++	function GetSurveysForAdmin($user_id, $isSuperAdmin, $sort = NULL)
+ 	{
+         $params=array();
++        if (isset($sort))
++        {
++            $addparams = array('order'=> 'Survey.'.$sort['id'].' '.$sort['dir']);
++        }
++        // $addparams = array('order'=>'Survey.name ASC');
+         if (!$isSuperAdmin)
+         {
+             $aro=new aro;
+@@ -120,6 +125,7 @@
+                 }
+             }
+             
++			
+             if (count($othersurveyids)>0)
+             {
+                 $params=array('conditions'=>array('OR'=> array('Survey.owner_id' => $user_id, 'Survey.id' => $othersurveyids)));
+@@ -128,11 +134,12 @@
+             {
+                 $params=array('conditions'=>array('Survey.owner_id' => $user_id));
+             }
+-            if (isset($addparams))
+-            {
+-                $params=array_merge($params,$addparams);
+-            }
+         }
++        
++        if (isset($addparams))
++        {
++            $params=array_merge($params,$addparams);
++        }
+         return $this->find('all',$params);
+ 	}
+     

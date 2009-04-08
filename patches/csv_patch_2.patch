@@ -1,0 +1,176 @@
+Index: app/locale/deu/LC_MESSAGES/default.po
+===================================================================
+--- app/locale/deu/LC_MESSAGES/default.po	(revision 6594)
++++ app/locale/deu/LC_MESSAGES/default.po	(working copy)
+@@ -406,7 +406,7 @@
+ 
+ #: D:\web\xampp\htdocs\limesurvey2\app/plugins/edcsv/models/edcsv_main.php:9
+ #, fuzzy
+-msgid "Character separated values(CSV)"
++msgid "Comma separated values(CSV)"
+ msgstr "Komma-separierte Werte (CSV)"
+ 
+ #: D:\web\xampp\htdocs\limesurvey2\app/plugins/edcsv/models/edcsv_main.php:14
+Index: app/models/result.php
+===================================================================
+--- app/models/result.php	(revision 6594)
++++ app/models/result.php	(working copy)
+@@ -274,7 +274,6 @@
+             $userfound=false;
+             foreach ($resultset as $dummy1=>$singleresultkey)
+             {
+-                $value=null;
+                 if ($this->db->config['driver']=='mssql') $singleresultkey['singleresult']=$singleresultkey[0];  //MSSQL fix
+                 // this is a desperate way to retrieve the user_id
+                 if ($userfound==false && !is_null($singleresultkey['singleresult']['user_id']))
+@@ -282,35 +281,8 @@
+                     $fields['username']=$this->User->field('username',array('User.id'=>$singleresultkey['singleresult']['user_id']));
+                     $userfound==true; 
+                 }
+-                if ($singleresultkey['singleresult']['value_input_id']!=NULL)
+-                {
+-                    // this is an input id as valud therefor we have to get the real value from the input_element table 
+-                    $tempvalue=$singleresultkey['singleresult']['value_input_id'];
+-                    $ieresult=$this->InputElement->find('first', array('conditions'=>array('InputElement.id'=>$tempvalue)));
+-                    if (isset($ieresult['InputElement']['label_text']))
+-                    {
+-                        $value=$ieresult['InputElement']['label_text'];
+-                    }
+-                    else {
+-                        $value=sprintf(__('Unknown (%s)',true),$tempvalue);
+-                    }
+-                }
+-                elseif ($singleresultkey['singleresult']['value_memo']!=NULL)
+-                {
+-                    $value=$singleresultkey['singleresult']['value_memo'];
+-                }
+-                elseif ($singleresultkey['singleresult']['value_text']!=NULL)
+-                {
+-                    $value=$singleresultkey['singleresult']['value_text'];
+-                }
+-                elseif ($singleresultkey['singleresult']['value_number']!=NULL)
+-                {
+-                    $value=$singleresultkey['singleresult']['value_number'];
+-                }
+-                elseif ($singleresultkey['singleresult']['value_datetime']!=NULL)
+-                {
+-                    $value=$singleresultkey['singleresult']['value_datetime'];
+-                }
++				
++				$value=$this->findValue($singleresultkey['singleresult']);
+                 if ($singleresultkey['singleresult']['question_id']!=NULL)
+                 {
+                     if (isset($fields[$singleresultkey['singleresult']['question_id']]))
+@@ -424,38 +396,10 @@
+             $cellarray=array();
+             foreach ($resultset as $dummy1=>$singleresultkey)
+             {
+-                $value=null;
+                 if ($this->db->config['driver']=='mssql') $singleresultkey['singleresult']=$singleresultkey[0];  //MSSQL fix
+ 
+-                if ($singleresultkey['singleresult']['value_input_id']!=NULL)
+-                {
+-                    // this is an input id as value therefor we have to get the real value from the input_element table 
+-                    $tempvalue=$singleresultkey['singleresult']['value_input_id'];
+-                    $ieresult=$this->InputElement->find('first', array('conditions'=>array('InputElement.id'=>$tempvalue)));
+-                    if (isset($ieresult['InputElement']['label_text']))
+-                    {
+-                        $value=$ieresult['InputElement']['label_text'];
+-                    }
+-                    else {
+-                        $value=sprintf(__('Unknown (%s)',true),$tempvalue);
+-                    }
+-                }
+-                elseif ($singleresultkey['singleresult']['value_memo']!=NULL)
+-                {
+-                    $value=$singleresultkey['singleresult']['value_memo'];
+-                }
+-                elseif ($singleresultkey['singleresult']['value_text']!=NULL)
+-                {
+-                    $value=$singleresultkey['singleresult']['value_text'];
+-                }
+-                elseif ($singleresultkey['singleresult']['value_number']!=NULL)
+-                {
+-                    $value=$singleresultkey['singleresult']['value_number'];
+-                }
+-                elseif ($singleresultkey['singleresult']['value_datetime']!=NULL)
+-                {
+-                    $value=$singleresultkey['singleresult']['value_datetime'];
+-                }
++                $value=$this->findValue($singleresultkey['singleresult']);
++				
+                 if ($singleresultkey['singleresult']['question_id']!=NULL)
+                 {
+                     if (isset($fields[$singleresultkey['singleresult']['question_id']]))
+@@ -723,7 +667,7 @@
+ 
+                 if (isset($resultset[$structurefield['Question']['id'].'::']) && !is_null($resultset[$structurefield['Question']['id'].'::']))
+                 {
+-                  $fields[$structurefield['Question']['id'].'::']=$resultset[$structurefield['Question']['id'].'::'];  
++                  $fields[$structurefield['Question']['id'].'::']=$this->findValue($resultset[$structurefield['Question']['id'].'::']);  
+                 }
+                 elseif (isset($currentloop)) 
+                 {
+@@ -756,10 +700,10 @@
+     * @param mixed $singleresult
+     * @return string
+     */
+-    function findValue($singleresult)
++    function findValue(&$singleresult)
+     {
+         $value=null;
+-        if ($singleresult['value_input_id']!=NULL)
++		if ($singleresult['value_input_id']!=NULL)
+         {
+             // this is an input id as valud therefor we have to get the real value from the input_element table 
+             $tempvalue=$singleresult['value_input_id'];
+@@ -772,19 +716,19 @@
+                 $value=sprintf(__('Answer ID %s',true),$tempvalue);
+             }
+         }
+-        elseif ($singleresult['value_memo']!=NULL)
++		elseif ($singleresult['value_memo']!=NULL)
+         {
+             $value=$singleresult['value_memo'];
+         }
+-        elseif ($singleresultkey['value_text']!=NULL)
++        elseif ($singleresult['value_text']!=NULL)
+         {
+             $value=$singleresult['value_text'];
+         }
+-        elseif ($singleresultkey['value_number']!=NULL)
++        elseif ($singleresult['value_number']!=NULL)
+         {
+             $value=$singleresult['value_number'];
+         }
+-        elseif ($singleresultkey['value_datetime']!=NULL)
++        elseif ($singleresult['value_datetime']!=NULL)
+         {
+             $value=$singleresult['value_datetime'];
+         }
+Index: app/plugins/edcsv/models/edcsv_main.php
+===================================================================
+--- app/plugins/edcsv/models/edcsv_main.php	(revision 6594)
++++ app/plugins/edcsv/models/edcsv_main.php	(working copy)
+@@ -6,7 +6,7 @@
+     var $qtversion = 1;
+     
+     function getExportDataTypeName() {
+-        $edName=__('Character separated values(CSV)',true);
++        $edName=__('Comma separated values(CSV)',true);
+         return $edName; 
+     }
+ 
+Index: app/plugins/edcsv/views/edcsv_main/index.ctp
+===================================================================
+--- app/plugins/edcsv/views/edcsv_main/index.ctp	(revision 6594)
++++ app/plugins/edcsv/views/edcsv_main/index.ctp	(working copy)
+@@ -3,7 +3,7 @@
+ </h1>
+ <hr class='space' />
+ <hr class='space' />
+-<?
++<?php
+     echo $form->create(null,array('action'=>'export'));
+     echo $form->input('Export.separatorchar',array('type'=>'select',
+                                             'options'=>array(','=>__('Comma (,)',true),

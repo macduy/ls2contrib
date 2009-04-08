@@ -1,0 +1,50 @@
+Index: controllers/admins_controller.php
+===================================================================
+--- controllers/admins_controller.php	(revision 6598)
++++ controllers/admins_controller.php	(working copy)
+@@ -940,7 +940,7 @@
+ 
+     
+     /**
+-    * put your comment there...
++    * Stores a new/updates an existing announcement.
+     * 
+     * @param mixed $id
+     */
+Index: models/announcement.php
+===================================================================
+--- models/announcement.php	(revision 6598)
++++ models/announcement.php	(working copy)
+@@ -40,8 +40,17 @@
+ 
+   function jsonGetAnnouncements($id=null, $webroot="", $jqGrid=array(), $striptags=false)
+   {
+-    $announcement = $this->find('all');
+-
++    // sorting
++    if ($jqGrid["sidx"]=="type")
++    {
++        // if sort by 'type', use the type name
++        $order = "AnnouncementType.name ".$jqGrid["sord"];
++    } else 
++    {
++        $order = "Announcement.".$jqGrid["sidx"]." ".$jqGrid["sord"];        
++    }
++        
++    $announcement = $this->find('all', array('order'=>$order));
+ 	$list="";
+ 	$i=0;
+ 	$total=count($announcement);
+Index: views/admins/announcement.ctp
+===================================================================
+--- views/admins/announcement.ctp	(revision 6598)
++++ views/admins/announcement.ctp	(working copy)
+@@ -36,7 +36,7 @@
+ 		{
+             $announcementtypes[$type['AnnouncementType']['id']]=$type['AnnouncementType']['name'];
+ 		}      
+-        echo $form->input('Announcement.type_id',
++        echo $form->input('Announcement.announcement_type_id',
+                        array('options'=>$announcementtypes,
+                              'type'=>'select',    
+                              'class'=>'large tooltipme', 
